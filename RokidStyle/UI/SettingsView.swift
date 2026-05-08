@@ -71,13 +71,7 @@ struct SettingsView: View {
                 }
 
                 // ── Voice (TTS) ───────────────────────────────────────────
-                Section {
-                    ElevenLabsKeyRow()
-                } header: {
-                    Text("Voice (TTS)")
-                } footer: {
-                    Text("Add an ElevenLabs key to use neural TTS through your glasses. Leave blank to use the free on-device voice.")
-                }
+                ElevenLabsSection()
 
                 // ── About ──────────────────────────────────────────────────
                 Section("About") {
@@ -98,42 +92,136 @@ struct SettingsView: View {
     }
 }
 
-// ── ElevenLabs key row ───────────────────────────────────────────────────────
+// ── ElevenLabs section (key + voice picker) ───────────────────────────────────
 
-private struct ElevenLabsKeyRow: View {
-    private let udKey = "apikey_elevenlabs"
-    @State private var keyText:    String = ""
-    @State private var isRevealed: Bool   = false
+private struct ElevenLabsSection: View {
+
+    private let elOrange = Color(red: 0.98, green: 0.47, blue: 0.22)
+
+    @State private var keyText:         String            = ""
+    @State private var isRevealed:      Bool              = false
+    @State private var voices:          [ElevenLabsVoice] = []
+    @State private var selectedVoiceId: String            = ElevenLabsClient.defaultVoiceId
+    @State private var loadState:       LoadState         = .idle
+
+    private enum LoadState { case idle, loading, loaded, failed(String) }
+
+    private var hasKey: Bool { !keyText.trimmingCharacters(in: .whitespaces).isEmpty }
 
     var body: some View {
-        HStack(spacing: 10) {
-            Image(systemName: "waveform")
-                .foregroundStyle(Color(red: 0.98, green: 0.47, blue: 0.22)) // ElevenLabs orange
-                .font(.caption)
-            Group {
-                if isRevealed {
-                    TextField("ElevenLabs API key", text: $keyText)
-                        .font(.callout.monospaced())
-                        .autocorrectionDisabled()
-                        .textInputAutocapitalization(.never)
-                } else {
-                    SecureField("ElevenLabs API key", text: $keyText)
-                        .font(.callout)
+        Section {
+            // ── API key row ────────────────────────────────────────────────
+            HStack(spacing: 10) {
+                Image(systemName: "waveform")
+                    .foregroundStyle(elOrange)
+                    .font(.caption)
+                Group {
+                    if isRevealed {
+                        TextField("ElevenLabs API key", text: $keyText)
+                            .font(.callout.monospaced())
+                            .autocorrectionDisabled()
+                            .textInputAutocapitalization(.never)
+                    } else {
+                        SecureField("ElevenLabs API key", text: $keyText)
+                            .font(.callout)
+                    }
+                }
+                .onChange(of: keyText) { _, new in
+                    UserDefaults.standard.set(new, forKey: "apikey_elevenlabs")
+                    if hasKey { loadVoices() } else { voices = []; loadState = .idle }
+                }
+                Button {
+                    isRevealed.toggle()
+                } label: {
+                    Image(systemName: isRevealed ? "eye.slash" : "eye")
+                        .foregroundStyle(.secondary)
+                        .font(.caption)
+                }
+                .buttonStyle(.plain)
+            }
+
+            // ── Voice picker ───────────────────────────────────────────────
+            if hasKey {
+                switch loadState {
+                case .idle:
+                    EmptyView()
+
+                case .loading:
+                    HStack {
+                        ProgressView()
+                            .controlSize(.small)
+                        Text("Loading voices…")
+                            .font(.callout)
+                            .foregroundStyle(.secondary)
+                    }
+
+                case .loaded:
+                    Picker(selection: $selectedVoiceId) {
+                        ForEach(voices) { voice in
+                            Text(voice.name).tag(voice.voice_id)
+                        }
+                    } label: {
+                        Label("Voice", systemImage: "person.wave.2")
+                    }
+                    .pickerStyle(.menu)
+                    .onChange(of: selectedVoiceId) { _, new in
+                        UserDefaults.standard.set(new, forKey: ElevenLabsClient.voiceIdPref)
+                    }
+
+                case .failed(let msg):
+                    HStack(spacing: 8) {
+                        Image(systemName: "exclamationmark.triangle")
+                            .foregroundStyle(.orange)
+                            .font(.caption)
+                        Text(msg)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        Spacer()
+                        Button("Retry") { loadVoices() }
+                            .font(.caption)
+                    }
                 }
             }
-            .onChange(of: keyText) { _, new in
-                UserDefaults.standard.set(new, forKey: udKey)
+
+        } header: {
+            Text("Voice (TTS)")
+        } footer: {
+            if hasKey {
+                Text("Using ElevenLabs neural TTS. Falls back to on-device voice if unavailable.")
+            } else {
+                Text("Add an ElevenLabs key to use neural TTS through your glasses. Leave blank to use the free on-device voice.")
             }
-            Button {
-                isRevealed.toggle()
-            } label: {
-                Image(systemName: isRevealed ? "eye.slash" : "eye")
-                    .foregroundStyle(.secondary)
-                    .font(.caption)
-            }
-            .buttonStyle(.plain)
         }
-        .onAppear { keyText = UserDefaults.standard.string(forKey: udKey) ?? "" }
+        .onAppear {
+            keyText         = UserDefaults.standard.string(forKey: "apikey_elevenlabs") ?? ""
+            selectedVoiceId = UserDefaults.standard.string(forKey: ElevenLabsClient.voiceIdPref) ?? ElevenLabsClient.defaultVoiceId
+            if hasKey { loadVoices() }
+        }
+    }
+
+    private func loadVoices() {
+        let key = keyText.trimmingCharacters(in: .whitespaces)
+        guard !key.isEmpty else { return }
+        loadState = .loading
+        Task {
+            do {
+                let fetched = try await ElevenLabsClient.fetchVoices(apiKey: key)
+                await MainActor.run {
+                    voices    = fetched
+                    // Keep existing selection if it's still in the list, otherwise pick first
+                    if !fetched.contains(where: { $0.voice_id == selectedVoiceId }),
+                       let first = fetched.first {
+                        selectedVoiceId = first.voice_id
+                        UserDefaults.standard.set(first.voice_id, forKey: ElevenLabsClient.voiceIdPref)
+                    }
+                    loadState = .loaded
+                }
+            } catch {
+                await MainActor.run {
+                    loadState = .failed(error.localizedDescription)
+                }
+            }
+        }
     }
 }
 
