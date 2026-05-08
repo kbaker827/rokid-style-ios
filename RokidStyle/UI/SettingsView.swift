@@ -70,6 +70,15 @@ struct SettingsView: View {
                     Text("Tip: keep it short — responses are spoken aloud. Longer prompts use more tokens.")
                 }
 
+                // ── Voice (TTS) ───────────────────────────────────────────
+                Section {
+                    ElevenLabsKeyRow()
+                } header: {
+                    Text("Voice (TTS)")
+                } footer: {
+                    Text("Add an ElevenLabs key to use neural TTS through your glasses. Leave blank to use the free on-device voice.")
+                }
+
                 // ── About ──────────────────────────────────────────────────
                 Section("About") {
                     LabeledContent("App", value: "Rokid Style AI")
@@ -86,6 +95,45 @@ struct SettingsView: View {
                 }
             }
         }
+    }
+}
+
+// ── ElevenLabs key row ───────────────────────────────────────────────────────
+
+private struct ElevenLabsKeyRow: View {
+    private let udKey = "apikey_elevenlabs"
+    @State private var keyText:    String = ""
+    @State private var isRevealed: Bool   = false
+
+    var body: some View {
+        HStack(spacing: 10) {
+            Image(systemName: "waveform")
+                .foregroundStyle(Color(red: 0.98, green: 0.47, blue: 0.22)) // ElevenLabs orange
+                .font(.caption)
+            Group {
+                if isRevealed {
+                    TextField("ElevenLabs API key", text: $keyText)
+                        .font(.callout.monospaced())
+                        .autocorrectionDisabled()
+                        .textInputAutocapitalization(.never)
+                } else {
+                    SecureField("ElevenLabs API key", text: $keyText)
+                        .font(.callout)
+                }
+            }
+            .onChange(of: keyText) { _, new in
+                UserDefaults.standard.set(new, forKey: udKey)
+            }
+            Button {
+                isRevealed.toggle()
+            } label: {
+                Image(systemName: isRevealed ? "eye.slash" : "eye")
+                    .foregroundStyle(.secondary)
+                    .font(.caption)
+            }
+            .buttonStyle(.plain)
+        }
+        .onAppear { keyText = UserDefaults.standard.string(forKey: udKey) ?? "" }
     }
 }
 

@@ -14,6 +14,7 @@
 		A101000500000005 /* SpeechListener.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000500000005 /* SpeechListener.swift */; };
 		A101000600000006 /* SpeechSynthesizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000600000006 /* SpeechSynthesizer.swift */; };
 		A101000700000007 /* AiApiClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000700000007 /* AiApiClient.swift */; };
+		A101000C0000000C /* ElevenLabsClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000C0000000C /* ElevenLabsClient.swift */; };
 		A101000800000008 /* AiModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000800000008 /* AiModels.swift */; };
 		A101000900000009 /* AVFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A100000900000009 /* AVFoundation.framework */; };
 		A101000A0000000A /* Speech.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A100000A0000000A /* Speech.framework */; };
@@ -28,6 +29,7 @@
 		A100000500000005 /* SpeechListener.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeechListener.swift; sourceTree = "<group>"; };
 		A100000600000006 /* SpeechSynthesizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeechSynthesizer.swift; sourceTree = "<group>"; };
 		A100000700000007 /* AiApiClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AiApiClient.swift; sourceTree = "<group>"; };
+		A100000C0000000C /* ElevenLabsClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ElevenLabsClient.swift; sourceTree = "<group>"; };
 		A100000800000008 /* AiModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AiModels.swift; sourceTree = "<group>"; };
 		A100000900000009 /* AVFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AVFoundation.framework; path = System/Library/Frameworks/AVFoundation.framework; sourceTree = SDKROOT; };
 		A100000A0000000A /* Speech.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Speech.framework; path = System/Library/Frameworks/Speech.framework; sourceTree = SDKROOT; };
@@ -125,6 +127,7 @@
 			isa = PBXGroup;
 			children = (
 				A100000700000007 /* AiApiClient.swift */,
+				A100000C0000000C /* ElevenLabsClient.swift */,
 			);
 			path = Network;
 			sourceTree = "<group>";
@@ -212,6 +215,7 @@
 				A101000500000005 /* SpeechListener.swift in Sources */,
 				A101000600000006 /* SpeechSynthesizer.swift in Sources */,
 				A101000700000007 /* AiApiClient.swift in Sources */,
+				A101000C0000000C /* ElevenLabsClient.swift in Sources */,
 				A101000800000008 /* AiModels.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
